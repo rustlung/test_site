@@ -1,0 +1,66 @@
+services:
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - internal
+    depends_on:
+      - registry
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      SCRIPT_NAME: /pgadmin
+    networks:
+      - internal
+    depends_on:
+      - postgres
+
+  registry:
+    image: registry:2
+    container_name: registry
+    restart: unless-stopped
+    volumes:
+      - registry_data:/var/lib/registry
+    networks:
+      - internal
+
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.54
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
+  registry_data:
+
+networks:
+  internal:
+    driver: bridge
