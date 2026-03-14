@@ -197,18 +197,3 @@ PGADMIN_PASSWORD=<пароль>
 # Backend (DATABASE_URL для SQLAlchemy)
 DATABASE_URL=postgresql://admin:<пароль>@postgres:5432/resideprestige
 ```
-
----
-
-## Git commit (initial)
-
-For the first commit that adds backend, frontend, and full stack to the repo that previously had only `infra/`:
-
-```
-Add full-stack Résidé Prestige: backend, frontend, README
-
-- Backend: FastAPI + SQLAlchemy + PostgreSQL (leads, services, behavior)
-- Frontend: React SPA with lead form and behavior tracking
-- Docker Compose: nginx, backend, frontend, postgres, pgadmin, registry
-- README: architecture, API docs, env vars, run/deploy instructions
-```
