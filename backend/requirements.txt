@@ -1,0 +1,7 @@
+# Direct dependencies (versions from pip freeze)
+fastapi==0.128.0
+uvicorn==0.40.0
+sqlalchemy==2.0.48
+psycopg2-binary==2.9.11
+pydantic==2.12.5
+python-dotenv==1.2.1

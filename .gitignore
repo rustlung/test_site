@@ -1,5 +1,51 @@
+# --- Обязательные ---
 .env
 __pycache__/
 *.pyc
+node_modules/
+dist/
+
+# --- Python ---
 *.pyo
+*.pyd
+.Python
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
+*.egg-info/
+.eggs/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node.js ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+.npmrc
+package-lock.json.bak
+
+# --- Docker ---
+.docker/
+
+# --- VS Code ---
+.vscode/
+*.code-workspace
+
+# --- Windows ---
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# --- macOS ---
 .DS_Store
+.AppleDouble
+.LSOverride
