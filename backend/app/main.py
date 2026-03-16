@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.database import Base, engine
 from app.models import models
-from app.routes import leads, behavior, services
+from app.routes import leads, behavior, services, auth, analytics
 
 
 @asynccontextmanager
@@ -17,6 +17,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
+    lifespan=lifespan,
     root_path="/api",
     docs_url="/docs",
     openapi_url="/openapi.json",
@@ -42,6 +43,8 @@ app.add_middleware(
 app.include_router(leads.router)
 app.include_router(behavior.router)
 app.include_router(services.router)
+app.include_router(auth.router)
+app.include_router(analytics.router)
 
 @app.get("/")
 def root():

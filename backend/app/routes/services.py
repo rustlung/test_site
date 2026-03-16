@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.models import Service, ServiceCRUD
+from app.core.security import get_current_admin
 
 router = APIRouter(prefix="/services", tags=["services"])
 
@@ -48,14 +49,32 @@ def list_active_services(db: Session = Depends(get_db)):
     return ServiceCRUD.get_active(db)
 
 
+@router.get("/all", response_model=List[ServiceResponse])
+def list_all_services(
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin),
+):
+    """Список всех услуг для админки."""
+    return ServiceCRUD.get_all(db)
+
+
 @router.post("/", response_model=ServiceResponse)
-def create_service(data: ServiceCreateSchema, db: Session = Depends(get_db)):
+def create_service(
+    data: ServiceCreateSchema,
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin),
+):
     """Создать услугу (для админа)."""
     return ServiceCRUD.create(db, **data.model_dump())
 
 
 @router.put("/{id}", response_model=ServiceResponse)
-def update_service(id: int, data: ServiceUpdateSchema, db: Session = Depends(get_db)):
+def update_service(
+    id: int,
+    data: ServiceUpdateSchema,
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin),
+):
     """Обновить услугу."""
     service = ServiceCRUD.update(db, id, **data.model_dump(exclude_unset=True))
     if not service:
@@ -64,7 +83,11 @@ def update_service(id: int, data: ServiceUpdateSchema, db: Session = Depends(get
 
 
 @router.delete("/{id}")
-def delete_service(id: int, db: Session = Depends(get_db)):
+def delete_service(
+    id: int,
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin),
+):
     """Удалить услугу."""
     deleted = ServiceCRUD.delete(db, id)
     if not deleted:

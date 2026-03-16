@@ -63,11 +63,13 @@ class Lead(Base):
 
 class LeadBehavior(Base):
     """
-    Поведение пользователя на странице (связь 1-к-1 с Lead).
+    Поведение пользователя на странице. Либо привязано к заявке (lead_id),
+    либо только к сессии (session_id) до отправки формы.
 
     CREATE TABLE lead_behavior (
         id SERIAL PRIMARY KEY,
-        lead_id INTEGER UNIQUE NOT NULL REFERENCES lead(id) ON DELETE CASCADE,
+        lead_id INTEGER UNIQUE REFERENCES lead(id) ON DELETE CASCADE,
+        session_id VARCHAR(64) UNIQUE,
         time_on_page INTEGER NOT NULL,
         clicks JSONB,
         hovers JSONB,
@@ -78,14 +80,17 @@ class LeadBehavior(Base):
     __tablename__ = "lead_behavior"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    lead_id: Mapped[int] = mapped_column(Integer, ForeignKey("lead.id", ondelete="CASCADE"), unique=True, nullable=False)
+    lead_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("lead.id", ondelete="CASCADE"), unique=True, nullable=True
+    )
+    session_id: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True, index=True)
     time_on_page: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     clicks: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     hovers: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     return_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     raw_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
-    lead: Mapped["Lead"] = relationship("Lead", back_populates="behavior")
+    lead: Mapped[Optional["Lead"]] = relationship("Lead", back_populates="behavior")
 
 
 class Service(Base):
@@ -169,6 +174,36 @@ class LeadBehaviorCRUD:
         return db.query(LeadBehavior).filter(LeadBehavior.lead_id == lead_id).first()
 
     @staticmethod
+    def get_by_session_id(db: "Session", session_id: str) -> Optional[LeadBehavior]:
+        return db.query(LeadBehavior).filter(LeadBehavior.session_id == session_id).first()
+
+    @staticmethod
+    def update_or_create_for_session(
+        db: "Session", session_id: str, *, time_on_page: int, clicks=None, hovers=None, return_count: int = 0
+    ) -> LeadBehavior:
+        row = db.query(LeadBehavior).filter(LeadBehavior.session_id == session_id).first()
+        if row:
+            row.time_on_page = time_on_page
+            row.clicks = clicks
+            row.hovers = hovers
+            row.return_count = return_count
+            db.commit()
+            db.refresh(row)
+            return row
+        obj = LeadBehavior(
+            session_id=session_id,
+            lead_id=None,
+            time_on_page=time_on_page,
+            clicks=clicks,
+            hovers=hovers,
+            return_count=return_count,
+        )
+        db.add(obj)
+        db.commit()
+        db.refresh(obj)
+        return obj
+
+    @staticmethod
     def get_all(db: "Session") -> List[LeadBehavior]:
         return db.query(LeadBehavior).all()
 
@@ -233,3 +268,36 @@ class ServiceCRUD:
             db.commit()
             return True
         return False
+
+
+class Admin(Base):
+    """
+    Администратор (учётная запись для управления сервисами).
+
+    CREATE TABLE admin (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR UNIQUE NOT NULL,
+        hashed_password VARCHAR NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );
+    """
+    __tablename__ = "admin"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+
+class AdminCRUD:
+    @staticmethod
+    def create(db: "Session", **kwargs) -> Admin:
+        obj = Admin(**kwargs)
+        db.add(obj)
+        db.commit()
+        db.refresh(obj)
+        return obj
+
+    @staticmethod
+    def get_by_username(db: "Session", username: str) -> Optional[Admin]:
+        return db.query(Admin).filter(Admin.username == username).first()

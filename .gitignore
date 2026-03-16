@@ -49,3 +49,6 @@ $RECYCLE.BIN/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# --- Cursor / IDE ---
+.cursor/
