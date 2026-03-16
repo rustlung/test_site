@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app.core.database import get_db
+from app.core.security import get_current_admin
 from app.models.models import LeadBehaviorCRUD
 
 router = APIRouter(prefix="/behavior", tags=["behavior"])
@@ -62,6 +63,15 @@ def track_behavior(data: BehaviorTrackSchema, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/", response_model=List[BehaviorResponse])
+def list_all_behavior(
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin),
+):
+    """Список всех записей поведения (для админки)."""
+    return LeadBehaviorCRUD.get_all(db)
 
 
 @router.get("/{lead_id}", response_model=BehaviorResponse)
